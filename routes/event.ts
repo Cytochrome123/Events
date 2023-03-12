@@ -3,6 +3,9 @@ import passport from "passport";
 
 // import {getRegister} from '../controllers/user'
 // import getRe
+import * as basicEventController from "../controllers/basic/event"
+import * as organizersController from '../controllers/organizer/event';
+import * as usersController from '../controllers/user/event';
 import * as eventController from "../controllers/event";
 import { pay, verify } from "../controllers";
 
@@ -10,19 +13,19 @@ export const eventRoutes = express.Router()
 
 
 eventRoutes.route('/events')
-.get(passport.authenticate('jwt'), eventController.getAllEvents)
-.post(passport.authenticate('jwt'), eventController.createEvent)
+.get(passport.authenticate('jwt'), basicEventController.getAllEvents)
+.post(passport.authenticate('jwt'), organizersController.createEvent)
 
 eventRoutes.route('/event/:id')
-.get(passport.authenticate('jwt'), eventController.getEvent)
-.patch(passport.authenticate('jwt'), eventController.updateEvent)
+.get(passport.authenticate('jwt'), basicEventController.getEvent)
+.patch(passport.authenticate('jwt'), organizersController.updateEvent)
 
 eventRoutes.route('/event/:id/register')
-.post(passport.authenticate('jwt'), eventController.register4Event)
+.post(passport.authenticate('jwt'), basicEventController.register4Event)
 
-eventRoutes.get('/events/registered', passport.authenticate('jwt'), eventController.getRegisteredEvents)
+eventRoutes.get('/events/registered', passport.authenticate('jwt'), usersController.getRegisteredEvents)
 
-eventRoutes.get('/events/created', passport.authenticate('jwt'), eventController.getCreatedEvents)
+eventRoutes.get('/events/created', passport.authenticate('jwt'), organizersController.getCreatedEvents)
 
 eventRoutes.route('/event/:eventID/check-in')
 .post(eventController.checkInToEvent)
@@ -35,6 +38,9 @@ eventRoutes.route('/:eventID/paystack/verify/:reference')
 
 eventRoutes.get('/test', eventController.test)
 
-eventRoutes.get('/myEven/:eventID', eventController.getRegistrationList)
+eventRoutes.get('/registration-list/:eventID', organizersController.getRegistrationList);
+
+eventRoutes.route('/event/:eventID/create-scanner')
+.post(eventController.createScanner)
 
 // module.exports  = eventRoutes

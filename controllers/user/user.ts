@@ -1,7 +1,7 @@
 import { RequestHandler, Request, Response, NextFunction } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
-import User from '../model/user';
+import User from '../../model/user';
 import qr from 'qrcode';
 
 // interface IUser
@@ -9,9 +9,9 @@ import qr from 'qrcode';
 const createToken = (userData: any) => {
     let key = 'process.env.JWT_SECRET';
     let userObj = {
-        firstName: userData.firstName,
-		lastName: userData.lastName,
-        email: userData.email,
+        // firstName: userData.firstName,
+		// lastName: userData.lastName,
+        // email: userData.email,
         userId: userData._id,
         role: userData.userType,
     }
@@ -27,7 +27,8 @@ export const register: RequestHandler = async (req ,res, next) => {
         const exists = await User.findOne({email});
         if(!exists) {
             let userObj;
-            const qrData = createToken(req.body);
+            // const qrData = createToken(req.body);
+            const qrData = JSON.stringify(req.body);
             const code = await qr.toDataURL(qrData);
             userObj = {...req.body, code}
             // (await User.create(req.body)).save()

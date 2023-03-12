@@ -2,7 +2,7 @@ import express from "express";
 
 // import {getRegister} from '../controllers/user'
 // import getRe
-import * as userController from "../controllers/user";
+import * as userController from "../controllers/user/user";
 
 export const userRoutes = express.Router()
 

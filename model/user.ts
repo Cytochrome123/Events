@@ -1,7 +1,8 @@
 import { Schema, InferSchemaType, model } from "mongoose";
 
-enum userType {
+export enum userType {
     admin = 'admin',
+	organizer = 'organizer',
     user = 'user'
 }
 

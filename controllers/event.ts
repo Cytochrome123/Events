@@ -1,4 +1,4 @@
-import { NextFunction, RequestHandler, Request, Response } from "express";
+import { RequestHandler } from "express";
 
 // import {  RequestHandler, Request } from "express";
 import User from '../model/user';
@@ -14,55 +14,11 @@ import Test from "../model/dynamic";
 // }
 
 
-export const getAllEvents: RequestHandler = async (req, res, next) => {
-    try {
-        const events = await Event.find()
-        if (events) {
-            res.status(200).json({ data: { events } })
-        } else {
-            res.status(400).json({ data: { msg: 'No event' } })
-        }
-    } catch (err) {
-        next(err)
-    }
-}
 
-export const createEvent: RequestHandler = async (req: Request, res, next) => {
-    try {
-        // @ignore
-        const userData: any = req.user;
-        const eventDetails = req.body;
 
-        const exists = await Event.findOne({ title: eventDetails.title });
-        if (!exists) {
-            // eventDetails._id = mongoose.Types.ObjectId(userData._id)
-            eventDetails.userID = userData._id
 
-            await Event.create(eventDetails);
-            res.status(200).json({ data: { msg: 'Event created!!!' } })
-        } else {
 
-            res.status(400).json({ data: { msg: 'Event with the title exists!!!' } })
-        }
-    } catch (err) {
-        next(err)
-    }
-}
 
-export const getEvent: RequestHandler = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const event = await Event.findById(id);
-        if (event) {
-            res.status(200).json({ data: { event } })
-        } else {
-            res.status(200).json({ data: { msg: 'Not found' } })
-        }
-
-    } catch (error) {
-        next(error)
-    }
-}
 
 // export const test = async (req: Request, res: Response, next: NextFunction) => {
 //     try {
@@ -113,166 +69,13 @@ export const getEvent: RequestHandler = async (req, res, next) => {
 //     }
 // }
 
-export const register4Event = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const userData: any = req.user;
-        const { id } = req.params;
-        const { email } = req.body
-        const event = await Event.findById(id);
-
-        if (event) {
-            console.log(event)
-            // const registered = await Registration.findOne({ userID: userData._id })
-            const registered = await Registration.findOne({ email })
-            if (registered) {
-                console.log(registered)
-                let exists;
-                // registered.forEach(registration => {
-                // console.log(registered.events)
-                // console.log(event._id)
-                // this find doesn't look good  --  or try to remodel the database
-                exists = registered.events.find(list => list.eventID?.toString() === event._id.toString());
-                // console.log(list.eventID);
-                //     console.log('---')
-                //     console.log(event._id)
-                //     console.log(new mongoose.Types.ObjectId('63f520d66aaac41df173ef01'));
-                console.log(exists)
-                if (exists) {
-                    res.status(400).json({ data: { msg: 'You have registered for the selected event before, proceed to make payment if you have not done so' } })
-                }
-                else {
-                    // interface addEvent {
-                    //     eventID: any,
-                    //     payment: boolean
-                    // }
-                    // const dyn = event.registrationData[0];
-                    const fullDyn = new Map([])
-                    event.registrationData.forEach(data => {
-                        fullDyn.set(data, req.body[data])
-                    })
-                    // event.registrationData.forEach(data => {
-                    //     return {
-                    //         ...
-                    //     }
-                    // })
-                    const addEvent = {
-                        $push: {
-                            events: {
-                                eventID: event._id,
-                                payment: false,
-                                dynamicField: fullDyn
-                            }
-                        }
-                    }
-                    const register = await Registration.findOneAndUpdate({userID: userData._id}, addEvent, {new: true, lean: true})
-                    if(register){
-
-                        res.status(200).json({ data: { msg: 'Event registeration sucessfully, procedd to pay' } })
-                    } else {
-                        res.status(200).json({ data: { msg: 'Registration failed' } })
-                    }
-                }
-            } else {
-                interface add {
-                    userID: string,
-                    events: object[],
-                    title: string
-                }
-                const addEvent: add = {
-                    userID: userData._id,
-                    events: [],
-                    title: event.title
-                }
-                console.log(addEvent)
-                const fullDyn = new Map([])
-                // For the real value (from the req.body) that would be stored in an array and gotten with a for loop i.e the forEach wil be converted
-                event.registrationData.forEach(data => {
-                    fullDyn.set(data, req.body[data])
-                })
-                addEvent.events.push({
-                    eventID: event._id,
-                    payment: false,
-                    dynamicField: fullDyn
-                    // dynamicField: {
-                    //     [event.registrationData[0]]: 12
-                    // }
-                })
-                await new Registration(addEvent).save()
-                res.status(200).json({ data: { msg: 'Event registeration sucessfully, procedd to payyyyy' } })
-            }
-        } else {
-            res.status(200).json({ data: { msg: 'You shouldnt be here fam' } })
-        }
-    } catch (err) {
-        next(err)
-    }
-}
-
-export const getRegisteredEvents: RequestHandler = async (req, res, next) => {
-    try {
-        const myDetails: any = req.user!;
-        const populateOptions = {
-            path: 'events.eventID',
-            select: '_id title description location passcode',
-            model: 'Event'
-        };
-
-        // const registeration = await Registration.findOne({userID: myDetails._id})
-        const registeration = await Registration.findOne({email: myDetails.email})
-        .populate(populateOptions).exec()
-        if(registeration) {
-            const events = registeration.events
-            res.status(200).json({data: {events}})
-        } else {
-            res.status(200).json({msg: 'You r yet to register for an event'})
-        }
-    } catch (err) {
-        next(err)
-    }
-}
-
-export const getCreatedEvents: RequestHandler = async (req, res, next) => {
-    try {
-        const myDetails: any = req.user;
-        // const events = await Event.fin
-        let condition = { userID: new mongoose.Types.ObjectId(myDetails._id)};
-
-        const events = await Event.find(condition)
-        if(events) {
-            const count = await Event.countDocuments(condition);
-            res.status(200).json({data: {events, count}})
-        } else {
-            res.status(400).json({msg: 'No event created, proceed to create one' })
-        }
-
-        console.log(events)
 
 
-    } catch (err) {
-        next(err)
-    }
-}
 
-export const updateEvent: RequestHandler = async (req, res, next) => {
-    try {
-        const userDetails: any = req.user!
-        const { id } = req.params;
-        const updateDetails = req.body;
 
-        // JUST didn't feel like using the findByIdAndUpdate lol
 
-        const event = await Event.findById(id);
-        if(event && event.userID?.toString() === userDetails._id.toString()) {
-            Object.assign(event, updateDetails);
-            const updatedEvent = await event.save();
-            res.status(200).json({updatedEvent})
-        } else {
-            res.status(200).json({msg: 'The event doesn\'t exist'})
-        }
-    } catch (err) {
-        next(err)
-    }
-}
+
+
 
 export const checkInToEvent: RequestHandler = async (req, res, next) => {
     try {
@@ -282,7 +85,7 @@ export const checkInToEvent: RequestHandler = async (req, res, next) => {
         const user: any = await User.findOne({email: qrDetails.email})
         if(user) {
 
-            const registration = await Registration.findOne({userID: user._id})
+            const registration = await Registration.findOne({email: qrDetails.email})
             if(registration) {
 
                 // for (let i = 0; i < registration.events.length; i++) {
@@ -381,6 +184,44 @@ export const checkInToEvent: RequestHandler = async (req, res, next) => {
     }
 }
 
+export const createScanner: RequestHandler = async (req, res, next) => {
+    try {
+        const { scannerName } = req.body;
+        const { eventID } = req.params;
+        // const registrations = await Registration.find({'events.eventID': eventID})
+        const aggregatePipeline = [
+            { $match: { 'events.eventID': new mongoose.Types.ObjectId(eventID) } },
+            { $project: {
+                firstName: 1,
+                lastName: 1,
+                email: 1,
+                phoneNumber: 1,
+                events: { $filter: { input: '$events', as: 'e', cond: { $eq: ['$$e.eventID', new mongoose.Types.ObjectId(eventID)] } } }
+            } }
+        ];
+
+        const registrations = await Registration.aggregate(aggregatePipeline, { lean: true })
+        // console.log(registrations) 
+        for (let i = 0; i < registrations.length; i++) {
+            // console.log(registrations[i].events)
+            const dyn: any  = registrations[i].events[0].dynamicField
+            // dyn.set(scannerName, false)
+            dyn[scannerName] = false;
+            await Registration.updateMany(
+                { _id: new mongoose.Types.ObjectId(registrations[i]._id), 'events.eventID': new mongoose.Types.ObjectId(eventID)},
+                { $set: { 'events.$.dynamicField': dyn }}
+            )
+        }
+        // res.json({registrations, up})
+        res.status(200).json({msg: 'Scanner created sucessfully '})
+        // registrations.forEach(registration => {
+        //     registration.events[0].dynamicField.set(scannerName, false)
+        // })
+    } catch (err) {
+        next(err);
+    }
+}
+
 export const test: RequestHandler = async (req, res, next) => {
     try {
         const testObj = {
@@ -395,39 +236,3 @@ export const test: RequestHandler = async (req, res, next) => {
     }
 }
 
-export const getRegistrationList: RequestHandler = async (req, res, next) => {
-    try {
-        const { eventID } = req.params;
-        console.log(req.params)
-        const registrations = await Registration.find({ events: { $elemMatch: { eventID: eventID } } }, { 'events.$': 1 }).exec();
-        if(registrations) {
-            // registrations.map(registration => registration.events[0])
-            res.json({registrations})
-        } else {
-            res.status(400).json({msg: 'No registrations for ur event ATM!!!'})
-        }
-        // const registrationForMyEvent = await Registration.find()
-        // if(registrationForMyEvent) {
-        //     let filtered: Array<object> = [{}]
-        //     let yyy = false;
-        //     registrationForMyEvent.forEach(event => {
-        //         // console.log(event)
-        //         filtered = event.events.filter(eve => {
-        //             console.log(eve.eventID)
-        //             console.log(new mongoose.Types.ObjectId( eventID ))
-        //             return eve.eventID?.toString() === new mongoose.Types.ObjectId( eventID ).toString()
-        //         })
-        //     })
-        //     // for(let i=0; i< registrationForMyEvent.length; i++) {
-        //     //     for (let j = 0; j < registrationForMyEvent[i].events.length; j++) {
-        //     //         // const element = array[j];
-        //     //         const hold = registrationForMyEvent[i].events[j].eventID!
-        //     //         console.log(hold.toString() === new mongoose.Types.ObjectId( eventID ).toString());
-        //     //     }
-        //     // }
-        //     res.json({filtered, yyy})
-        // } 
-    } catch (err) {
-        next(err)
-    }
-}

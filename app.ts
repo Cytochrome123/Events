@@ -79,7 +79,7 @@ passport.use(
             // let query = { _id: mongoose.Types.ObjectId(jwtPayload.userId) };
             let query = { _id: jwtPayload.userId };
 
-            let projections = { userType: 1, status: 1 };
+            let projections = { password: 0, createdDate: 0, createdAt: 0, updatedAt: 0 };
             let options = { lean: true };
 
             let user = await User.findOne(
